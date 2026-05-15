@@ -1,9 +1,9 @@
 services:
   api:
     build: .
-    container_name: mysportsnest_backend
+    container_name: wixbot_backend
     ports:
-      - "8007:8000"
+      - "8011:8000"
     volumes:
       - .:/app
       - static_volume:/app/staticfiles
@@ -17,7 +17,7 @@ services:
 
   celery:
     build: .
-    container_name: mysportsnest_celery
+    container_name: wixbot_celery
     volumes:
       - .:/app
       - media_volume:/app/media
@@ -32,7 +32,7 @@ services:
 
   celery_beat:
     build: .
-    container_name: mysportsnest_celery_beat
+    container_name: wixbot_celery_beat
     volumes:
       - .:/app
     env_file:
@@ -46,9 +46,9 @@ services:
 
   flower:
     build: .
-    container_name: mysportsnest_flower
+    container_name: wixbot_flower
     ports:
-      - "5557:5555"
+      - "5511:5555"
     volumes:
       - .:/app
     env_file:
@@ -61,20 +61,20 @@ services:
 
   db:
     image: postgres:15
-    container_name: mysportsnest_db
+    container_name: wixbot_db
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     env_file:
       - .env
     ports:
-      - "5437:5432"
+      - "5411:5432"
     restart: unless-stopped
 
   redis:
     image: redis:7-alpine
-    container_name: mysportsnest_redis
+    container_name: wixbot_redis
     ports:
-      - "6387:6379"
+      - "6311:6379"
     volumes:
       - redis_data:/data
     restart: unless-stopped
