@@ -50,17 +50,6 @@ INSTALLED_APPS = [
     "celery",
     # Local apps
     "apps.accounts",
-    "apps.core",
-    "apps.onboarding",
-    "apps.bible",
-    "apps.chat",
-    "apps.notification",
-    "apps.subscription",
-    "apps.checkin",
-    "apps.homepage",
-    "apps.goal",
-    
-
 ]
 
 MIDDLEWARE = [
