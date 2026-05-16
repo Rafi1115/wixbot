@@ -27,7 +27,7 @@ from .serializers import (
     SocialAuthSerializer,
     UserProfileSerializer 
 )
-from apps.notification.services.notification_service import NotificationService
+# from apps.notification.services.notification_service import NotificationService
 from rest_framework.generics import RetrieveUpdateAPIView
 from django.conf import settings
 from apps.core.utils.mixins import BaseResponseMixin
@@ -469,13 +469,13 @@ class UserProfileGenericView(BaseResponseMixin, RetrieveUpdateAPIView):
             serializer.save()
             
             # Send notification when profile is updated
-            NotificationService.send_notification(
-                user_id=request.user.id,
-                title="Profile Updated",
-                message="Your profile was updated.",
-                notification_types=['push'],
-                data={"action": "profile_update"}
-            )
+            # NotificationService.send_notification(
+            #     user_id=request.user.id,
+            #     title="Profile Updated",
+            #     message="Your profile was updated.",
+            #     notification_types=['push'],
+            #     data={"action": "profile_update"}
+            # )
             
             return self.success_response(
                 data=serializer.data,
