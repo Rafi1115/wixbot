@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>{{ purpose|title }} Code</title>
+</head>
+<body style="font-family: sans-serif; color: #333; line-height: 1.6; padding: 20px;">
+    <h2>Hello {{ user.first_name|default:"there" }},</h2>
+
+    <p>Your <strong>{{ purpose|title }}</strong> code is:</p>
+
+    <h1 style="font-size: 32px; color: #2c3e50; margin: 20px 0;">{{ otp }}</h1>
+
+    <p>This code will expire in <strong>{{ valid_minutes }} minutes</strong>.</p>
+
+    <p>Please do not share this code with anyone.</p>
+
+    <hr>
+    <p style="color: #888;">If you didn't request this, just ignore this email.</p>
+    <p>— The wixbot Team</p>
+</body>
+</html>
