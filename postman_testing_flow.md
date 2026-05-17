@@ -350,13 +350,15 @@ Authorization: Bearer {{access}}
 ```
 POST {{base_url}}/api/bots/
 Authorization: Bearer {{access}}
+Content-Type: multipart/form-data
 ```
-```json
-{
-  "name": "Johal AI Assistant",
-  "business_context": "We sell electronics in London. Free shipping over £50. Return policy: 30 days.",
-  "widget_enabled": true
-}
+```
+Body → form-data:
+  Key: name               Type: Text     Value: Johal AI Assistant (required)
+  Key: business_context   Type: Text     Value: We sell electronics in London. Free shipping over £50. Return policy: 30 days. (optional)
+  Key: widget_enabled     Type: Text     Value: true (optional)
+  Key: website_url        Type: Text     Value: https://en.wikipedia.org/wiki/Artificial_intelligence (optional)
+  Key: files              Type: File     Value: (pick any .pdf, .docx, .txt, or .xlsx) (optional, supports multiple files)
 ```
 > ✅ Expected: bot object with `id` — **copy id → set `{{bot_id}}`**
 
@@ -382,12 +384,15 @@ Authorization: Bearer {{access}}
 ```
 PATCH {{base_url}}/api/bots/{{bot_id}}/
 Authorization: Bearer {{access}}
+Content-Type: multipart/form-data
 ```
-```json
-{
-  "name": "Johal Store Bot",
-  "business_context": "We are Johal Electronics, London's top electronics retailer since 2010."
-}
+```
+Body → form-data:
+  Key: name               Type: Text     Value: Johal Store Bot (optional)
+  Key: business_context   Type: Text     Value: We are Johal Electronics, London's top electronics retailer since 2010. (optional)
+  Key: widget_enabled     Type: Text     Value: true (optional)
+  Key: website_url        Type: Text     Value: https://en.wikipedia.org/wiki/Artificial_intelligence (optional, will add source)
+  Key: files              Type: File     Value: (pick any .pdf, .docx, .txt, or .xlsx) (optional, supports multiple files, will add sources)
 ```
 
 ---

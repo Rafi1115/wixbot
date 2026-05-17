@@ -269,6 +269,13 @@ AZURE_TENANT_ID = env("AZURE_TENANT_ID", default="common")
 AZURE_REDIRECT_URI = env("AZURE_REDIRECT_URI", default="")
 
 # ─────────────────────────────────────────────
+# Wix Integration
+# ─────────────────────────────────────────────
+
+WIX_APP_ID = env("WIX_APP_ID", default="")
+WIX_APP_SECRET = env("WIX_APP_SECRET", default="")
+
+# ─────────────────────────────────────────────
 # ChromaDB (vector store for RAG)
 # ─────────────────────────────────────────────
 

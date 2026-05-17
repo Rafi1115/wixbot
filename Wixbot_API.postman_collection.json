@@ -899,11 +899,6 @@
                 "key": "Authorization",
                 "value": "Bearer {{access}}",
                 "type": "text"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
               }
             ],
             "url": {
@@ -918,13 +913,34 @@
               ]
             },
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Johal AI Assistant\",\n  \"business_context\": \"We sell electronics in London. Free shipping over \\u00a350. Returns: 30 days.\",\n  \"widget_enabled\": true\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "name",
+                  "value": "Johal AI Assistant",
+                  "type": "text"
+                },
+                {
+                  "key": "business_context",
+                  "value": "We sell electronics in London. Free shipping over \u00a350. Returns: 30 days.",
+                  "type": "text"
+                },
+                {
+                  "key": "widget_enabled",
+                  "value": "true",
+                  "type": "text"
+                },
+                {
+                  "key": "website_url",
+                  "value": "https://en.wikipedia.org/wiki/Artificial_intelligence",
+                  "type": "text"
+                },
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": ""
                 }
-              }
+              ]
             }
           },
           "response": [],
@@ -1002,11 +1018,6 @@
                 "key": "Authorization",
                 "value": "Bearer {{access}}",
                 "type": "text"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
               }
             ],
             "url": {
@@ -1022,13 +1033,34 @@
               ]
             },
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Johal Store Bot\",\n  \"business_context\": \"Johal Electronics - London's top electronics retailer since 2010.\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "name",
+                  "value": "Johal Store Bot",
+                  "type": "text"
+                },
+                {
+                  "key": "business_context",
+                  "value": "Johal Electronics - London's top electronics retailer since 2010.",
+                  "type": "text"
+                },
+                {
+                  "key": "widget_enabled",
+                  "value": "true",
+                  "type": "text"
+                },
+                {
+                  "key": "website_url",
+                  "value": "https://en.wikipedia.org/wiki/Artificial_intelligence",
+                  "type": "text"
+                },
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": ""
                 }
-              }
+              ]
             }
           },
           "response": []

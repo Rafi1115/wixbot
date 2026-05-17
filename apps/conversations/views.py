@@ -64,12 +64,23 @@ class ChatView(APIView):
             },
         )
 
+        from apps.conversations.consumers import push_new_message, push_new_conversation
+
+        if created:
+            push_new_conversation(str(bot.id), ConversationSerializer(conversation).data)
+
         # 4 — Save user message
         user_message = data["message"]
-        Message.objects.create(
+        u_msg = Message.objects.create(
             conversation=conversation,
             role="user",
             content=user_message,
+        )
+
+        push_new_message(
+            str(bot.id),
+            str(conversation.id),
+            MessageSerializer(u_msg).data
         )
 
         # 5 — Human handoff mode — don't reply with AI
@@ -105,11 +116,17 @@ class ChatView(APIView):
         response_time = round(time.time() - start, 2)
 
         # 9 — Save assistant message
-        Message.objects.create(
+        a_msg = Message.objects.create(
             conversation=conversation,
             role="assistant",
             content=reply,
             response_time_seconds=response_time,
+        )
+
+        push_new_message(
+            str(bot.id),
+            str(conversation.id),
+            MessageSerializer(a_msg).data
         )
 
         # 10 — Increment usage counter
@@ -246,12 +263,34 @@ class HandoffView(APIView):
             conv.mode = "human"
             conv.assigned_agent = request.user
             conv.save(update_fields=["mode", "assigned_agent"])
+
+            from apps.conversations.consumers import push_conversation_updated
+            push_conversation_updated(
+                str(conv.bot.id),
+                str(conv.id),
+                {
+                    "mode": "human",
+                    "assigned_agent_id": request.user.id,
+                    "assigned_agent_name": request.user.full_name,
+                }
+            )
             return Response({"detail": "You are now handling this conversation.", "mode": "human"})
 
         elif action == "release":
             conv.mode = "ai"
             conv.assigned_agent = None
             conv.save(update_fields=["mode", "assigned_agent"])
+
+            from apps.conversations.consumers import push_conversation_updated
+            push_conversation_updated(
+                str(conv.bot.id),
+                str(conv.id),
+                {
+                    "mode": "ai",
+                    "assigned_agent_id": None,
+                    "assigned_agent_name": None,
+                }
+            )
             return Response({"detail": "Conversation returned to AI.", "mode": "ai"})
 
 
@@ -285,6 +324,13 @@ class AgentMessageView(APIView):
             content=content,
         )
         Conversation.objects.filter(pk=conv.pk).update(last_message_at=timezone.now())
+
+        from apps.conversations.consumers import push_new_message
+        push_new_message(
+            str(conv.bot.id),
+            str(conv.id),
+            MessageSerializer(msg).data
+        )
 
         # Send back through the right channel
         self._dispatch_to_channel(conv, content)

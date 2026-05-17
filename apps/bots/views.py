@@ -3,6 +3,7 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
 from .models import Bot, BotBehavior, BotDesign
 from .serializers import (
@@ -30,6 +31,7 @@ class BotListView(APIView):
     POST /api/bots/   — create a new bot
     """
     permission_classes = [IsAuthenticated]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
 
     def get(self, request):
         bots = Bot.objects.filter(tenant=request.user.tenant)
@@ -51,6 +53,7 @@ class BotDetailView(APIView):
     DELETE /api/bots/<pk>/   — delete
     """
     permission_classes = [IsAuthenticated]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
 
     def get(self, request, pk):
         bot = get_bot(pk, request.user.tenant)
