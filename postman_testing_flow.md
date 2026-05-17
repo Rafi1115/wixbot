@@ -792,7 +792,23 @@ POST {{base_url}}/api/chat/
 
 ## 📁 FOLDER 5 — Conversations (Dashboard)
 
-### 5.1 List All Conversations
+### 5.1 WebSocket — Live updates socket
+```text
+ws://localhost:8000/ws/conversations/{{bot_id}}/
+```
+**Headers (for connection handshake):**
+* `Authorization`: `Bearer {{access}}`
+*(Note: Send a ping event from Postman `{"type": "ping"}` to test keep-alive, you will receive `{"type": "pong"}`).*
+
+> ✅ Expected real-time pushed event types:
+> * `connected` — upon successful handshake.
+> * `new_conversation` — when a new chat starts.
+> * `new_message` — when a customer sends a message or when the AI replies.
+> * `conversation_updated` — when an agent takes over/releases or is assigned.
+
+---
+
+### 5.2 List All Conversations
 ```
 GET {{base_url}}/api/conversations/
 Authorization: Bearer {{access}}
@@ -801,7 +817,7 @@ Authorization: Bearer {{access}}
 
 ---
 
-### 5.2 Filter by Bot
+### 5.3 Filter by Bot
 ```
 GET {{base_url}}/api/conversations/?bot={{bot_id}}
 Authorization: Bearer {{access}}
@@ -809,7 +825,7 @@ Authorization: Bearer {{access}}
 
 ---
 
-### 5.3 Filter by Channel
+### 5.4 Filter by Channel
 ```
 GET {{base_url}}/api/conversations/?channel=website
 Authorization: Bearer {{access}}
@@ -817,7 +833,7 @@ Authorization: Bearer {{access}}
 
 ---
 
-### 5.4 Filter by Mode
+### 5.5 Filter by Mode
 ```
 GET {{base_url}}/api/conversations/?mode=ai
 Authorization: Bearer {{access}}
@@ -825,7 +841,7 @@ Authorization: Bearer {{access}}
 
 ---
 
-### 5.5 Search Conversations
+### 5.6 Search Conversations
 ```
 GET {{base_url}}/api/conversations/?search=Ahmed
 Authorization: Bearer {{access}}
@@ -833,7 +849,7 @@ Authorization: Bearer {{access}}
 
 ---
 
-### 5.6 Get Full Conversation + Messages
+### 5.7 Get Full Conversation + Messages
 ```
 GET {{base_url}}/api/conversations/{{conv_id}}/
 Authorization: Bearer {{access}}
@@ -842,7 +858,7 @@ Authorization: Bearer {{access}}
 
 ---
 
-### 5.7 Human Takeover
+### 5.8 Human Takeover
 ```
 POST {{base_url}}/api/conversations/{{conv_id}}/handoff/
 Authorization: Bearer {{access}}
@@ -857,7 +873,7 @@ Authorization: Bearer {{access}}
 
 ---
 
-### 5.8 Send Agent Message (Human Mode)
+### 5.9 Send Agent Message (Human Mode)
 ```
 POST {{base_url}}/api/conversations/{{conv_id}}/message/
 Authorization: Bearer {{access}}
@@ -871,7 +887,7 @@ Authorization: Bearer {{access}}
 
 ---
 
-### 5.9 Release Back to AI
+### 5.10 Release Back to AI
 ```
 POST {{base_url}}/api/conversations/{{conv_id}}/handoff/
 Authorization: Bearer {{access}}
@@ -885,12 +901,11 @@ Authorization: Bearer {{access}}
 
 ---
 
-### 5.10 Delete Conversation
+### 5.11 Delete Conversation
 ```
 DELETE {{base_url}}/api/conversations/{{conv_id}}/
 Authorization: Bearer {{access}}
 ```
-> ✅ Expected: 204 No Content
 
 ---
 
@@ -1291,6 +1306,7 @@ POST   /api/chat/                      ← NO AUTH
 GET    /api/conversations/
 POST   /api/conversations/<id>/handoff/
 POST   /api/conversations/<id>/message/
+WS     /ws/conversations/<bot_id>/
 
 GET    /api/leads/
 GET    /api/leads/export/

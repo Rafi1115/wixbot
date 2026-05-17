@@ -2220,6 +2220,35 @@
       "name": "5 - Conversations",
       "item": [
         {
+          "name": "WebSocket \u2014 Live updates socket",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "ws://localhost:8000/ws/conversations/{{bot_id}}/",
+              "protocol": "ws",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "ws",
+                "conversations",
+                "{{bot_id}}",
+                ""
+              ]
+            },
+            "description": "Establish a WebSocket connection to listen to real-time conversation events for this bot (new conversations, new user/assistant messages, and conversation updates)."
+          },
+          "response": []
+        },
+        {
           "name": "List All Conversations",
           "request": {
             "method": "GET",
