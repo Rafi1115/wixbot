@@ -25,7 +25,10 @@ from .serializers import (
     VerifyEmailChangeSerializer,
     LoginSerializer,
     SocialAuthSerializer,
-    UserProfileSerializer 
+    UserProfileSerializer,
+    UserMeSerializer,
+    TenantSerializer,
+    AgentSerializer,
 )
 # from apps.notification.services.notification_service import NotificationService
 from rest_framework.generics import RetrieveUpdateAPIView
@@ -495,3 +498,92 @@ class UserProfileGenericView(BaseResponseMixin, RetrieveUpdateAPIView):
     
     def post(self, request, *args, **kwargs):
         return self.put(request, *args, **kwargs)
+
+
+# ─────────────────────────────────────────────
+# Me, Tenant, Agents
+# ─────────────────────────────────────────────
+
+class MeView(APIView):
+    """
+    GET  /api/auth/me/   — return authenticated user info
+    PATCH /api/auth/me/  — update full_name
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        serializer = UserMeSerializer(request.user, context={"request": request})
+        return Response(serializer.data)
+
+    def patch(self, request):
+        serializer = UserMeSerializer(
+            request.user, data=request.data, partial=True, context={"request": request}
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+
+class TenantView(APIView):
+    """
+    GET   /api/auth/tenant/   — get tenant details
+    PATCH /api/auth/tenant/   — update tenant name
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def _get_tenant(self, user):
+        if not user.tenant:
+            return None
+        return user.tenant
+
+    def get(self, request):
+        tenant = self._get_tenant(request.user)
+        if not tenant:
+            return Response({"detail": "No tenant found."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(TenantSerializer(tenant).data)
+
+    def patch(self, request):
+        tenant = self._get_tenant(request.user)
+        if not tenant:
+            return Response({"detail": "No tenant found."}, status=status.HTTP_404_NOT_FOUND)
+        serializer = TenantSerializer(tenant, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+
+class AgentListView(APIView):
+    """
+    GET  /api/auth/agents/   — list all agents in your tenant
+    POST /api/auth/agents/   — invite a new agent (owner only)
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        if not request.user.tenant:
+            return Response([])
+        agents = User.objects.filter(
+            tenant=request.user.tenant,
+            role=User.ROLE_AGENT,
+        )
+        data = AgentSerializer(agents, many=True).data
+        return Response(data)
+
+    def post(self, request):
+        if not request.user.is_owner:
+            return Response(
+                {"detail": "Only the account owner can invite agents."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        if not request.user.tenant:
+            return Response(
+                {"detail": "You need a tenant to invite agents."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        serializer = AgentSerializer(
+            data=request.data,
+            context={"tenant": request.user.tenant},
+        )
+        serializer.is_valid(raise_exception=True)
+        agent = serializer.save()
+        return Response(AgentSerializer(agent).data, status=status.HTTP_201_CREATED)

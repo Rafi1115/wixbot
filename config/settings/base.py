@@ -46,10 +46,17 @@ INSTALLED_APPS = [
     "channels",
     "django_celery_beat",
     "drf_spectacular",
-    "firebase_admin",
     "celery",
     # Local apps
     "apps.accounts",
+    "apps.bots",
+    "apps.knowledge",
+    "apps.conversations",
+    "apps.messaging",
+    "apps.leads",
+    "apps.analytics",
+    "apps.billing",
+    "apps.core",
 ]
 
 MIDDLEWARE = [
@@ -145,8 +152,8 @@ REST_AUTH = {
 }
 
 # Allauth settings
-ACCOUNT_LOGIN_METHOD = "email"
-ACCOUNT_SIGNUP_FIELDS = ["email"]
+ACCOUNT_LOGIN_METHODS = {"email"}
+ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -219,19 +226,94 @@ CELERY_WORKER_MAX_TASKS_PER_CHILD = 1000
 # Firebase Admin SDK
 FIREBASE_CREDENTIALS_PATH = env('FIREBASE_CREDENTIALS_PATH', default='firebase-credentials.json')
 
+# ─────────────────────────────────────────────
 # API Keys
-APP_NAME = env("APP_NAME", default="Bibel")
+# ─────────────────────────────────────────────
+
+APP_NAME = env("APP_NAME", default="Wixbot")
 OPENAI_API_KEY = env("OPENAI_API_KEY", default="")
+
+# ─────────────────────────────────────────────
+# Stripe
+# ─────────────────────────────────────────────
+
 STRIPE_PUBLISHABLE_KEY = env("STRIPE_PUBLISHABLE_KEY", default="")
 STRIPE_SECRET_KEY = env("STRIPE_SECRET_KEY", default="")
 STRIPE_WEBHOOK_SECRET = env("STRIPE_WEBHOOK_SECRET", default="")
-STRIPE_LIVE_MODE = False
-STRIPE_CURRENCY = "usd"
+STRIPE_PRICE_SMART = env("STRIPE_PRICE_SMART", default="")
+STRIPE_PRICE_BOOST = env("STRIPE_PRICE_BOOST", default="")
+STRIPE_PRICE_ULTIMO = env("STRIPE_PRICE_ULTIMO", default="")
 
+# ─────────────────────────────────────────────
+# Meta (Facebook / Instagram / WhatsApp)
+# ─────────────────────────────────────────────
 
-# Bibel API
-BIBLE_API_KEY = env("BIBLE_API_KEY", default="")
+META_WEBHOOK_VERIFY_TOKEN = env("META_WEBHOOK_VERIFY_TOKEN", default="")
+META_APP_SECRET = env("META_APP_SECRET", default="")
 
-REVENUECAT_PUBLIC_KEY_ANDROID = env("REVENUECAT_PUBLIC_KEY_ANDROID", default="goog_your_key_here")
-REVENUECAT_PUBLIC_KEY_IOS = env("REVENUECAT_PUBLIC_KEY_IOS", default="appl_your_key_here")
-REVENUECAT_SECRET_KEY = env("REVENUECAT_SECRET_KEY", default="secrect_key ")
+# ─────────────────────────────────────────────
+# Google Drive
+# ─────────────────────────────────────────────
+
+GOOGLE_CLIENT_ID = env("GOOGLE_CLIENT_ID", default="")
+GOOGLE_CLIENT_SECRET = env("GOOGLE_CLIENT_SECRET", default="")
+GOOGLE_REDIRECT_URI = env("GOOGLE_REDIRECT_URI", default="")
+
+# ─────────────────────────────────────────────
+# OneDrive / Azure
+# ─────────────────────────────────────────────
+
+AZURE_CLIENT_ID = env("AZURE_CLIENT_ID", default="")
+AZURE_CLIENT_SECRET = env("AZURE_CLIENT_SECRET", default="")
+AZURE_TENANT_ID = env("AZURE_TENANT_ID", default="common")
+AZURE_REDIRECT_URI = env("AZURE_REDIRECT_URI", default="")
+
+# ─────────────────────────────────────────────
+# ChromaDB (vector store for RAG)
+# ─────────────────────────────────────────────
+
+CHROMA_DB_PATH = env("CHROMA_DB_PATH", default=str(BASE_DIR / "chroma_db"))
+
+# ─────────────────────────────────────────────
+# Frontend URL (for Stripe portal return)
+# ─────────────────────────────────────────────
+
+FRONTEND_URL = env("FRONTEND_URL", default="http://localhost:3000")
+
+# ─────────────────────────────────────────────
+# CORS
+# ─────────────────────────────────────────────
+
+CORS_ALLOWED_ORIGINS = env.list(
+    "CORS_ALLOWED_ORIGINS", default=["http://localhost:3000"]
+)
+CORS_ALLOW_CREDENTIALS = True
+# widget.js is loaded on any website — allow all origins for chat endpoints
+CORS_URLS_REGEX = r"^/api/.*$"
+
+# ─────────────────────────────────────────────
+# Celery Beat — periodic tasks
+# ─────────────────────────────────────────────
+
+CELERY_BEAT_SCHEDULE = {
+    "auto-rescrape-websites": {
+        "task": "apps.knowledge.tasks.auto_rescrape_websites",
+        "schedule": 3600 * 6,  # every 6 hours
+    },
+    "reset-monthly-message-counts": {
+        "task": "apps.billing.tasks.reset_message_counts",
+        "schedule": 3600 * 24,  # daily
+    },
+}
+
+# ─────────────────────────────────────────────
+# Email
+# ─────────────────────────────────────────────
+
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = env("EMAIL_HOST", default="smtp.resend.com")
+EMAIL_PORT = env.int("EMAIL_PORT", default=587)
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="resend")
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="noreply@wixbot.ai")

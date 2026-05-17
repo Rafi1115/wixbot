@@ -1,3 +1,5 @@
+import uuid
+import re
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.base_user import BaseUserManager
@@ -5,6 +7,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
 from django.conf import settings
+from django.utils.text import slugify
 
 
 class UserManager(BaseUserManager):
@@ -47,9 +50,91 @@ SOCIAL_AUTH_PROVIDERS = (
 )
 
 
+# ─────────────────────────────────────────────
+# Tenant — multi-tenant workspace (one per organisation)
+# ─────────────────────────────────────────────
+
+PLAN_LIMITS = {
+    "free": {
+        "bots": 1,
+        "knowledge_sources": 5,
+        "messages": 100,
+    },
+    "smart": {
+        "bots": 3,
+        "knowledge_sources": 25,
+        "messages": 2000,
+    },
+    "boost": {
+        "bots": 10,
+        "knowledge_sources": 100,
+        "messages": 10000,
+    },
+    "ultimo": {
+        "bots": 999,
+        "knowledge_sources": 999,
+        "messages": 999999,
+    },
+}
+
+
+class Tenant(models.Model):
+    """A workspace / organisation. Every user belongs to one tenant."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=255)
+    slug = models.SlugField(max_length=120, unique=True, blank=True)
+    plan = models.CharField(
+        max_length=20,
+        default="free",
+        choices=[("free", "Free"), ("smart", "Smart"), ("boost", "Boost"), ("ultimo", "Ultimo")],
+    )
+    plan_expires_at = models.DateTimeField(null=True, blank=True)
+    stripe_customer_id = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.plan})"
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base = slugify(self.name) or "tenant"
+            slug = base
+            counter = 1
+            while Tenant.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+                slug = f"{base}-{counter}"
+                counter += 1
+            self.slug = slug
+        super().save(*args, **kwargs)
+
+    def get_plan_limits(self):
+        return PLAN_LIMITS.get(self.plan, PLAN_LIMITS["free"])
+
+    @property
+    def is_plan_active(self):
+        if self.plan == "free":
+            return True
+        return self.plan_expires_at is None or self.plan_expires_at > timezone.now()
+
+
 class User(AbstractUser):
+    ROLE_OWNER = "owner"
+    ROLE_AGENT = "agent"
+    ROLE_CHOICES = [(ROLE_OWNER, "Owner"), (ROLE_AGENT, "Agent")]
+
     email = models.EmailField(unique=True)
     username = models.CharField(max_length=150, unique=False, blank=True, null=True)
+
+    tenant = models.ForeignKey(
+        Tenant,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="members",
+    )
+
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default=ROLE_OWNER)
+    full_name = models.CharField(max_length=255, blank=True)
 
     social_auth_provider = models.CharField(
         max_length=50, choices=SOCIAL_AUTH_PROVIDERS, blank=True, null=True
@@ -69,6 +154,14 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.email
+
+    @property
+    def is_owner(self):
+        return self.role == self.ROLE_OWNER
+
+    @property
+    def is_agent(self):
+        return self.role == self.ROLE_AGENT
 
     def soft_delete(self):
         """Mark the user as deleted."""
@@ -144,6 +237,7 @@ class UserProfile(models.Model):
     )
 
     last_active = models.DateTimeField(auto_now=True)
+    profile_completed = models.BooleanField(default=False)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -155,9 +249,10 @@ class UserProfile(models.Model):
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
-        UserProfile.objects.create(user=instance)
+        UserProfile.objects.get_or_create(user=instance)
 
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def save_user_profile(sender, instance, **kwargs):
-    instance.profile.save()
+    if hasattr(instance, "profile"):
+        instance.profile.save()

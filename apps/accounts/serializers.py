@@ -4,13 +4,71 @@ from django.contrib.auth.password_validation import validate_password
 from django.utils import timezone
 from datetime import timedelta
 import random
-from .models import OTP, UserProfile
+from .models import OTP, UserProfile, Tenant
 from django.core.mail import send_mail
 from django.conf import settings
 from apps.accounts.utils.send_otp_email import send_otp_email
 
 
 User = get_user_model()
+
+
+class TenantSerializer(serializers.ModelSerializer):
+    plan_limits = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Tenant
+        fields = [
+            "id", "name", "slug", "plan", "plan_expires_at",
+            "plan_limits", "stripe_customer_id", "created_at",
+        ]
+        read_only_fields = ["id", "slug", "plan", "plan_expires_at", "stripe_customer_id", "created_at"]
+
+    def get_plan_limits(self, obj):
+        return obj.get_plan_limits()
+
+
+class UserMeSerializer(serializers.ModelSerializer):
+    tenant = TenantSerializer(read_only=True)
+    profile_picture = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = [
+            "id", "email", "full_name", "role", "tenant",
+            "profile_picture", "created_at",
+        ]
+        read_only_fields = ["id", "email", "role", "created_at"]
+
+    def get_profile_picture(self, obj):
+        if hasattr(obj, "profile") and obj.profile.profile_picture:
+            request = self.context.get("request")
+            if request:
+                return request.build_absolute_uri(obj.profile.profile_picture.url)
+        return None
+
+
+class AgentSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
+
+    class Meta:
+        model = User
+        fields = ["id", "email", "full_name", "password", "created_at"]
+        read_only_fields = ["id", "created_at"]
+
+    def create(self, validated_data):
+        password = validated_data.pop("password")
+        tenant = self.context["tenant"]
+        user = User.objects.create(
+            email=validated_data["email"],
+            full_name=validated_data.get("full_name", ""),
+            tenant=tenant,
+            role=User.ROLE_AGENT,
+            is_active=True,
+        )
+        user.set_password(password)
+        user.save()
+        return user
 
 
 class LoginSerializer(serializers.Serializer):
@@ -22,10 +80,11 @@ class RegisterSerializer(serializers.ModelSerializer):
         write_only=True, required=True, validators=[validate_password]
     )
     password2 = serializers.CharField(write_only=True, required=True)
+    company_name = serializers.CharField(required=True, max_length=255)
 
     class Meta:
         model = User
-        fields = ("email", "password", "password2")
+        fields = ("email", "password", "password2", "company_name")
 
     def validate(self, attrs):
         if attrs["password"] != attrs["password2"]:
@@ -35,12 +94,21 @@ class RegisterSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
+        company_name = validated_data.pop("company_name")
         validated_data.pop("password2")
+
+        # Create the user (inactive until email verified)
         user = User.objects.create(
             email=validated_data["email"],
             is_active=False,
+            role=User.ROLE_OWNER,
         )
         user.set_password(validated_data["password"])
+
+        # Create the tenant workspace for this user
+        from apps.accounts.models import Tenant
+        tenant = Tenant.objects.create(name=company_name)
+        user.tenant = tenant
         user.save()
 
         self.send_verification_otp(user)
@@ -49,14 +117,14 @@ class RegisterSerializer(serializers.ModelSerializer):
     def send_verification_otp(self, user):
         otp_code = "".join(random.choices("0123456789", k=4))
 
-        otp = OTP.objects.create(   
+        otp = OTP.objects.create(
             user=user,
             otp=otp_code,
             purpose="verification",
             expires_at=timezone.now() + timedelta(minutes=10),
-        )   
+        )
 
-        send_otp_email(user, otp_code, "Verification")  
+        send_otp_email(user, otp_code, "Verification")
 
         return otp
 
