@@ -87,7 +87,7 @@ services:
     container_name: wixbot_smtp4dev
     ports:
       - "3011:80"
-      - "2525:25"
+      - "2511:25"
     restart: unless-stopped
 
 volumes:

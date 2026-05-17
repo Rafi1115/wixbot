@@ -117,6 +117,10 @@ class VerifyEmailView(BaseResponseMixin, generics.GenericAPIView):
 
 
 class ResendOTPView(BaseResponseMixin, generics.GenericAPIView):
+    serializer_class = ResendOTPSerializer
+    permission_classes = (permissions.AllowAny,)
+    throttle_classes = [AnonRateThrottle]
+
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)

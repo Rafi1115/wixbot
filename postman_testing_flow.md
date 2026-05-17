@@ -76,7 +76,22 @@ POST {{base_url}}/api/auth/login/
 
 ---
 
-### 1.4 Refresh Token
+### 1.4 Social Login / Registration
+```
+POST {{base_url}}/api/auth/social-auth/
+```
+```json
+{
+  "email": "socialuser@test.com",
+  "provider": "google",
+  "name": "Social User"
+}
+```
+> ✅ Expected: 200 with tokens -> set `{{access}}` and `{{refresh}}`
+
+---
+
+### 1.5 Refresh Token
 ```
 POST {{base_url}}/api/auth/token/refresh/
 ```
@@ -89,7 +104,7 @@ POST {{base_url}}/api/auth/token/refresh/
 
 ---
 
-### 1.5 Get My Profile (Me)
+### 1.6 Get My Profile (Me)
 ```
 GET {{base_url}}/api/auth/me/
 Authorization: Bearer {{access}}
@@ -98,7 +113,7 @@ Authorization: Bearer {{access}}
 
 ---
 
-### 1.6 Update My Name
+### 1.7 Update My Name
 ```
 PATCH {{base_url}}/api/auth/me/
 Authorization: Bearer {{access}}
@@ -111,7 +126,65 @@ Authorization: Bearer {{access}}
 
 ---
 
-### 1.7 Get Tenant Info
+### 1.8 Get User Profile
+```
+GET {{base_url}}/api/auth/profile/
+Authorization: Bearer {{access}}
+```
+> ✅ Expected: 200 with profile object (name, phone, bio, profile_picture, etc.)
+
+---
+
+### 1.9 Update User Profile (Full)
+```
+PUT {{base_url}}/api/auth/profile/
+Authorization: Bearer {{access}}
+```
+```json
+{
+  "name": "Johal Store",
+  "phone": "+447700123456",
+  "bio": "Expert electronics retailer since 2010"
+}
+```
+> ✅ Expected: 200 with updated profile object
+
+---
+
+### 1.10 Update Profile Details (Email/Bio)
+```
+PATCH {{base_url}}/api/auth/profile/update/
+Authorization: Bearer {{access}}
+```
+```json
+{
+  "name": "Johal Store Updated",
+  "email": "newemail@johal.com",
+  "phone": "+447700987654",
+  "bio": "New bio description",
+  "date_of_birth": "1995-01-01",
+  "gender": "male"
+}
+```
+> ✅ Expected: 200 with profile updated response. If email was changed, returns `"email_verification_pending": true` and sends OTP to the new email.
+
+---
+
+### 1.11 Verify Profile Email Change
+```
+POST {{base_url}}/api/auth/profile/verify-email-change/
+Authorization: Bearer {{access}}
+```
+```json
+{
+  "otp": "1234"
+}
+```
+> ✅ Expected: 200 — `{ "detail": "Email successfully updated." }`
+
+---
+
+### 1.12 Get Tenant Info
 ```
 GET {{base_url}}/api/auth/tenant/
 Authorization: Bearer {{access}}
@@ -120,7 +193,7 @@ Authorization: Bearer {{access}}
 
 ---
 
-### 1.8 Update Tenant Name
+### 1.13 Update Tenant Name
 ```
 PATCH {{base_url}}/api/auth/tenant/
 Authorization: Bearer {{access}}
@@ -133,7 +206,7 @@ Authorization: Bearer {{access}}
 
 ---
 
-### 1.9 Invite an Agent
+### 1.14 Invite an Agent
 ```
 POST {{base_url}}/api/auth/agents/
 Authorization: Bearer {{access}}
@@ -149,7 +222,7 @@ Authorization: Bearer {{access}}
 
 ---
 
-### 1.10 List Agents
+### 1.15 List Agents
 ```
 GET {{base_url}}/api/auth/agents/
 Authorization: Bearer {{access}}
@@ -157,7 +230,7 @@ Authorization: Bearer {{access}}
 
 ---
 
-### 1.11 Change Password
+### 1.16 Change Password
 ```
 POST {{base_url}}/api/auth/password/change/
 Authorization: Bearer {{access}}
@@ -172,7 +245,7 @@ Authorization: Bearer {{access}}
 
 ---
 
-### 1.12 Logout
+### 1.17 Logout
 ```
 POST {{base_url}}/api/auth/logout/
 Authorization: Bearer {{access}}
@@ -182,6 +255,92 @@ Authorization: Bearer {{access}}
   "refresh": "{{refresh}}"
 }
 ```
+
+---
+
+### 1.18 Resend OTP
+```
+POST {{base_url}}/api/auth/resend-otp/
+```
+```json
+{
+  "email": "johal@test.com",
+  "purpose": "verification"
+}
+```
+> Purpose options: `verification` or `password_reset`
+> ✅ Expected: 200 — `{ "message": "OTP has been sent to your email" }`
+
+---
+
+### 1.19 Reset Password Request
+```
+POST {{base_url}}/api/auth/password/reset-request/
+```
+```json
+{
+  "email": "johal@test.com"
+}
+```
+> ✅ Expected: 200 — `{ "message": "If the email exists, a password reset OTP has been sent" }`
+
+---
+
+### 1.20 Reset Password Verify OTP
+```
+POST {{base_url}}/api/auth/password/reset-verify-otp/
+```
+```json
+{
+  "email": "johal@test.com",
+  "otp": "1234"
+}
+```
+> ✅ Expected: 200 — `{ "email": "johal@test.com", "message": "OTP verified successfully" }`
+
+---
+
+### 1.21 Reset Password Confirm
+```
+POST {{base_url}}/api/auth/password/reset-confirm/
+```
+```json
+{
+  "email": "johal@test.com",
+  "otp": "1234",
+  "new_password": "NewPass456!",
+  "new_password2": "NewPass456!"
+}
+```
+> ✅ Expected: 200 — `{ "message": "Password has been reset successfully" }`
+
+---
+
+### 1.22 Soft Delete Account
+```
+POST {{base_url}}/api/auth/account/delete/
+Authorization: Bearer {{access}}
+```
+```json
+{
+  "confirm": true
+}
+```
+> ✅ Expected: 200 — `{ "message": "Account has been deactivated successfully" }`
+
+---
+
+### 1.23 Restore Account (Admin Only)
+```
+POST {{base_url}}/api/auth/account/restore/
+Authorization: Bearer {{access}}
+```
+```json
+{
+  "email": "johal@test.com"
+}
+```
+> ✅ Expected: 200 — `{ "data": { "email": "johal@test.com" }, "message": "Account restored successfully" }`
 
 ---
 
@@ -491,6 +650,60 @@ Authorization: Bearer {{access}}
 DELETE {{base_url}}/api/knowledge/{{bot_id}}/qa/<qa_id>/
 Authorization: Bearer {{access}}
 ```
+
+---
+
+### 📂 External Sources (Google Drive & OneDrive)
+
+### 3.15 Google Drive - Check Status
+```
+GET {{base_url}}/api/knowledge/{{bot_id}}/gdrive/
+Authorization: Bearer {{access}}
+```
+> ✅ Expected: 200 — `{ "connected": false }` or `{ "connected": true, ...config }`
+
+---
+
+### 3.16 Google Drive - Disconnect
+```
+DELETE {{base_url}}/api/knowledge/{{bot_id}}/gdrive/
+Authorization: Bearer {{access}}
+```
+> ✅ Expected: 200 — `{ "detail": "Google Drive disconnected." }`
+
+---
+
+### 3.17 OneDrive - Check Status
+```
+GET {{base_url}}/api/knowledge/{{bot_id}}/onedrive/
+Authorization: Bearer {{access}}
+```
+> ✅ Expected: 200 — `{ "connected": false }` or `{ "connected": true, ...config }`
+
+---
+
+### 3.18 OneDrive - Disconnect
+```
+DELETE {{base_url}}/api/knowledge/{{bot_id}}/onedrive/
+Authorization: Bearer {{access}}
+```
+> ✅ Expected: 200 — `{ "detail": "OneDrive disconnected." }`
+
+---
+
+### 3.19 Import External File
+```
+POST {{base_url}}/api/knowledge/{{bot_id}}/import-external/
+Authorization: Bearer {{access}}
+```
+```json
+{
+  "source_type": "google_drive",
+  "file_id": "file_12345",
+  "file_name": "Product_Catalog.pdf"
+}
+```
+> ✅ Expected: 201 — knowledge source object with `status: "pending"`, celery processes sync in background.
 
 ---
 
@@ -1032,10 +1245,26 @@ stripe trigger checkout.session.completed
 POST   /api/auth/register/
 POST   /api/auth/verify-email/
 POST   /api/auth/login/
+POST   /api/auth/social-auth/
+POST   /api/auth/token/refresh/
 GET    /api/auth/me/
+PATCH  /api/auth/me/
+GET    /api/auth/profile/
+PUT    /api/auth/profile/
+PATCH  /api/auth/profile/update/
+POST   /api/auth/profile/verify-email-change/
 GET    /api/auth/tenant/
+PATCH  /api/auth/tenant/
 POST   /api/auth/agents/
+GET    /api/auth/agents/
+POST   /api/auth/password/change/
 POST   /api/auth/logout/
+POST   /api/auth/resend-otp/
+POST   /api/auth/password/reset-request/
+POST   /api/auth/password/reset-verify-otp/
+POST   /api/auth/password/reset-confirm/
+POST   /api/auth/account/delete/
+POST   /api/auth/account/restore/
 
 POST   /api/bots/
 GET    /api/bots/<id>/
@@ -1046,6 +1275,11 @@ GET    /api/bots/public/<id>/config/   ← NO AUTH
 POST   /api/knowledge/<bot>/websites/
 POST   /api/knowledge/<bot>/files/     ← multipart/form-data
 POST   /api/knowledge/<bot>/qa/
+GET    /api/knowledge/<bot>/gdrive/
+DELETE /api/knowledge/<bot>/gdrive/
+GET    /api/knowledge/<bot>/onedrive/
+DELETE /api/knowledge/<bot>/onedrive/
+POST   /api/knowledge/<bot>/import-external/
 
 POST   /api/chat/                      ← NO AUTH
 
